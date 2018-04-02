@@ -135,8 +135,11 @@ class Blob():
             #Transform into coordinates of projection data
             x_, y_, z_ = idx_to_idx([x, y, z], self.resolution, proj_res)
             self.cuboid_strengths.append(X[x_-n:x_+n, y_-n:y_+n, z_-n:z_+n].mean())
-            
-        f.close()
+        
+        try:
+            f.close()
+        except UnboundLocalError:
+            pass
             
     def get_anatomical_info(self):
         
