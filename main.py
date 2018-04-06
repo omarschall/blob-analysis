@@ -31,7 +31,7 @@ parser.add_argument('--downsample_res', help='Resolution of the blob space',
                     default=50)
 parser.add_argument('--cube_side', help='Length of each cube side in microns. '+\
                     'Recommend being an integer multiple of downsample_res.',
-                    default=200)
+                    default=500)
 parser.add_argument('--large_cube_side', help='Length of larger cubes used to ' +\
                     'make packing more efficient.',
                     default=600)
@@ -49,7 +49,7 @@ for mask_dir in os.listdir(args.masks_dir):
     ds_blob_mask = downsample_blob_mask(blob_mask, target_res=args.downsample_res)
     
     #Define a blob object from this segmentation
-    blob = Blob(ds_blob_mask, name=mask_dir.split('-')[0])
+    blob = Blob(ds_blob_mask, name=mask_dir[:-5])
     
     #Perform all the calculations
     print 'Finding cubes...'

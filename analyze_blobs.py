@@ -70,12 +70,17 @@ class Blob():
         self.mask           = mask
         self.points         = np.array(np.where(mask>0)).T
         self.name           = name
+        self.params         = {'blob_resolution' : get_annotation_resolution(mask)}
         
     def get_cuboids(self, cuboid_side=500, large_cuboid_side=600, frac_in_blob=1):
         
         self.cuboid_side        = cuboid_side
         self.large_cuboid_side  = large_cuboid_side
         self.frac_in_blob       = frac_in_blob
+        
+        self.params['cube_side']        = cuboid_side
+        self.params['large_cube_side']  = large_cuboid_side
+        self.params['frac_in_blob']     = frac_in_blob
         
         leftovers = np.copy(self.mask)
         cuboid_mask = np.zeros_like(self.mask)
@@ -154,10 +159,19 @@ class Blob():
         
     def write_blob_to_excel_sheet(self, workbook, name='results.xlsx'):
         
+        #Hyperparameters sheet
+        workbook.create_sheet(self.name+' params')
+        sheet = workbook.get_sheet_by_name(self.name+' params')
+        
+        for i, key in enumerate(self.params.keys()):
+            
+            sheet.cell(row=i+1, column=1).value = key
+            sheet.cell(row=i+1, column=2).value = self.params[key]
+        
+        #Results sheet
         workbook.create_sheet(self.name)
         sheet = workbook.get_sheet_by_name(self.name)
         
-        #Header
         sheet.cell(row=1, column=1).value = 'Cube Index'
         sheet.cell(row=1, column=2).value = 'Cube Center Area'
         sheet.cell(row=1, column=3).value = 'Cube CCF (AP)'
