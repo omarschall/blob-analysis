@@ -31,7 +31,7 @@ parser.add_argument('--downsample_res', help='Resolution of the blob space',
                     default=50)
 parser.add_argument('--cube_side', help='Length of each cube side in microns. '+\
                     'Recommend being an integer multiple of downsample_res.',
-                    default=500)
+                    default=200)
 parser.add_argument('--large_cube_side', help='Length of larger cubes used to ' +\
                     'make packing more efficient.',
                     default=600)
@@ -53,7 +53,9 @@ for mask_dir in os.listdir(args.masks_dir):
     
     #Perform all the calculations
     print 'Finding cubes...'
-    blob.get_cuboids()
+    blob.get_cuboids(cuboid_side=float(args.cube_side),
+                     large_cuboid_side=float(args.large_cube_side),
+                     frac_in_blob=float(args.frac_in_blob))
     blob.get_ccf_and_stereotaxic_coordinates(ccf_to_stx)
     
     print 'Calculating cube strength...'
