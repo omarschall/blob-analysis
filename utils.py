@@ -8,6 +8,7 @@ Created on Thu Mar 29 11:13:24 2018
 
 from __future__ import division
 import numpy as np
+import os
 
 def get_annotation_resolution(array, coronal_slice=False):
     '''
@@ -56,4 +57,78 @@ def get_blank_mask(res):
     dims = tuple((base_dims/res).astype(np.int))
     
     return np.zeros(dims)
+
+def array_to_stack(array, stack_dir, overwrite=False):
+    
+    res = get_annotation_resolution(array)
+    
+    if not os.path.exists(stack_dir):
+        os.mkdir(stack_dir)
+    elif overwrite:
+        os.rmdir(stack_dir)
+        os.mkdir(stack_dir)
+    else:
+        raise ValueError('An image stack already exists, set overwrite to True.')
+
+def load_blob_mask(dir_path):
+    
+    slices = []
+    i_xs = []
+    for i, file_name in enumerate(sorted(os.listdir(dir_path))):
+            
+        i_xs.append(int(file_name.split('-')[1]))    
+        
+        im = io.imread(os.path.join(dir_path, file_name))
+        slices.append(im==0)
+        
+        if i==0:
+            res = get_annotation_resolution(array=im, coronal_slice=True)
+            
+    i_start_x = min(i_xs) - 1
+    i_stop_x  = max(i_xs)
+    total_slices = int(13200/res)
+    
+    for i in range(i_start_x):
+        
+        slices = [np.zeros_like(im)] + slices
+        
+    for i in range(i_stop_x, total_slices):
+        
+        slices = slices + [np.zeros_like(im)]
+        
+    blob_mask = np.array(slices)
+    
+    return blob_mask
+
+def downsample_blob_mask(blob_mask, target_res=100):
+    
+    blob_points = np.array(np.where(blob_mask>0)).T
+    
+    res = get_annotation_resolution(blob_mask)
+    
+    new_blob_points = tuple(idx_to_idx(blob_points, res, target_res).T)
+    new_blob_mask = get_blank_mask(target_res)
+    new_blob_mask[new_blob_points] = 1
+    
+    return new_blob_mask
+
+def combine_masks(dirs_list):
+    
+    
+    
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     
