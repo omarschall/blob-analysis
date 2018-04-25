@@ -35,6 +35,8 @@ parser.add_argument('--cube_side', help='Length of each cube side in microns. '+
 parser.add_argument('--large_cube_side', help='Length of larger cubes used to ' +\
                     'make packing more efficient.',
                     default=600)
+parser.add_argument('--n_cubes', help='Number of cubes to show in cube mask (strongest first)')
+parser.add_argument('--cube_mask_dir', help='Save path for cube mask')
 
 args = parser.parse_args()
 
@@ -46,7 +48,7 @@ for mask_dir in os.listdir(args.masks_dir):
     print 'Loading '+mask_dir.split('_')[0]+' mask...'
     
     blob_mask = load_blob_mask(os.path.join(args.masks_dir, mask_dir))
-    ds_blob_mask = downsample_blob_mask(blob_mask, target_res=args.downsample_res)
+    ds_blob_mask = downsample_blob_mask(blob_mask, target_res=int(args.downsample_res))
     
     #Define a blob object from this segmentation
     blob = Blob(ds_blob_mask, name=mask_dir[:-5])
@@ -65,3 +67,9 @@ for mask_dir in os.listdir(args.masks_dir):
     blob.write_blob_to_excel_sheet(wb, name=args.save_path)
     print 'Blob saved to excel sheet'
     print ' '
+    
+    print 'Creating mask of strongest '+args.n_cubes+' cubes...'
+    cube_mask = blob.get_cuboid_subset_mask(res=get_annotation_resolution(blob_mask), strongest_n=int(args.n_cubes))
+    array_to_stack(cube_mask, args.cube_mask_dir, invert=False)
+    print 'Cube mask saved'
+    

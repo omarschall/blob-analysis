@@ -154,6 +154,27 @@ class Blob():
             
         workbook.save(name)
             
+    def get_cuboid_subset_mask(self, res, cube_idx=None, strongest_n=None):
+        
+        if cube_idx is None and strongest_n is None:
+            raise ValueError('Need to either specific which cubes or to use the strongest_n cubes')
+        
+        n = int(np.round((self.cuboid_side/res)/2))
+        
+        if cube_idx is not None:
+            mask = get_blank_mask(res)
+            for i in cube_idx:
+                x, y, z = idx_to_idx(self.cuboid_points[i], self.resolution, res)
+                mask[x-n:x+n, y-n:y+n, z-n:z+n] = self.cuboid_strengths[i]/np.amax(self.cuboid_strengths)
+                
+        if strongest_n is not None:
+            mask = get_blank_mask(res)
+            idx = np.argsort(self.cuboid_strengths)[::-1][:strongest_n]
+            for i in idx:
+                x, y, z = idx_to_idx(self.cuboid_points[i], self.resolution, res)
+                mask[x-n:x+n, y-n:y+n, z-n:z+n] = 1 + self.cuboid_strengths[i]/np.amax(self.cuboid_strengths)
+                
+        return mask
         
         
     

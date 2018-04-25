@@ -11,6 +11,7 @@ import numpy as np
 import os
 from PIL import Image
 from skimage import io
+import h5py
 
 def get_annotation_resolution(array, coronal_slice=False):
     '''
@@ -60,29 +61,39 @@ def get_blank_mask(res):
     
     return np.zeros(dims)
 
-def array_to_stack(array, stack_dir, binary=False):
+def array_to_stack(array, stack_dir, invert=True):
     
-    X = (array==0).astype(np.uint8)
+    if invert:
+        X = (array==0).astype(np.uint8)
+    else:
+        X = array.astype(np.float32)
     
     if not os.path.exists(stack_dir):
         os.mkdir(stack_dir)
     else:
         raise ValueError('An image stack with that path already exists.')
 
+    scaling = 255/np.amax(X)
+
     for i in range(array.shape[0]):
         
-        im = Image.fromarray((X[i,:,:]*255).astype(np.uint8), mode='L')
+        im = Image.fromarray((X[i,:,:]*scaling).astype(np.uint8), mode='L')
         im.save(os.path.join(stack_dir, 'mask-'+str(i+1).zfill(4)+'-0.png'))
     
-def load_blob_mask(dir_path):
+def load_blob_mask(dir_path, invert=True):
     
     slices = []
     i_xs = []
     for i, file_name in enumerate(sorted(os.listdir(dir_path))):
-            
+        
         i_xs.append(int(file_name.split('-')[1]))    
         
         im = io.imread(os.path.join(dir_path, file_name))
+        
+        if invert:
+            X = (im==0).astype(np.int8)
+        else:
+            X = im.astype(np.int8)
         
         #If the last two images are at the same AP coordinate, just combine them
         try:
@@ -91,9 +102,9 @@ def load_blob_mask(dir_path):
             cond = False
         
         if cond:
-            slices[-1] = ((slices[-1] + (im==0))>0).astype(np.int8)
+            slices[-1] = ((slices[-1] + X)>0).astype(np.int8)
         else:
-            slices.append((im==0).astype(np.int8))
+            slices.append(X)
             
         if i==0:
             res = get_annotation_resolution(array=im, coronal_slice=True)
@@ -179,7 +190,26 @@ def subtract_masks(dir1, dir2):
     result = ((array1 - array2)>0).astype(np.int8)
     
     return result
+
+def stack_to_h5py(stack_dir, save_path, save_name):
+    
+    slices = []
+    for i, file_name in enumerate(sorted(os.listdir(stack_dir))):
         
+        im = io.imread(os.path.join(stack_dir, file_name))
+        slices.append(im)
+            
+        if i==0:
+            res = get_annotation_resolution(array=im, coronal_slice=True)
+            
+    X = np.array(slices)
+    
+    f = h5py.File(os.path.join(save_path, save_name), mode='w', driver='core')
+    f.create_dataset('proj_values', data=X)
+    f.close()
+            
+        
+    
         
     
     
